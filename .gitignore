@@ -1,0 +1,14 @@
+# system files
+.DS_Store
+
+# idea
+.idea
+
+# directories
+build
+test
+.sass-cache
+
+# files
+bootstrap.*
+*.pyc
