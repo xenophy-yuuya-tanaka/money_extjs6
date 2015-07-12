@@ -9,6 +9,9 @@ $API_TYPE   = null;
 $API_METHOD = null;
 $API_POST   = null;
 
+// timezone setting
+date_default_timezone_set('Asia/Tokyo');
+
 // {{{ beforeDatabase()
 
 function beforeDatabase() {
@@ -20,7 +23,12 @@ function beforeDatabase() {
         $PDO;
 
     try {
-        $PDO = new PDO('mysql:host='.$DB_HOST.';dbname='.$DB_NAME.';charset=utf8',$DB_USER,$DB_PASS);
+        $PDO = new PDO(
+            'mysql:host='.$DB_HOST.';dbname='.$DB_NAME.';charset=utf8',
+            $DB_USER,
+            $DB_PASS,
+            array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET CHARACTER SET `utf8`')
+        );
     } catch (PDOException $e) {
         // error code
         exit('database connect error: '.$e->getMessage());
@@ -173,17 +181,30 @@ function execute($rst, &$data, &$error) {
 }
 
 // }}}
+// {{{ fetch($res)
+
+function fetch($res) {
+    $rows = array();
+    while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+        if (isset($row['date'])) {
+            $row['date'] = date_create($row['date'])->format('Y-m-d');
+        }
+        $rows[] = $row;
+    }
+    return $rows;
+}
+
+// }}}
 // {{{ parseParams($fields, $params)
 
 function parseParams($fields, $params) {
+    $data = array();
     foreach($fields as $k => $v) {
-        if (!is_null($params[$k])) {
-            $fields[$k] = $params[$k];
-        } else {
-            unset($fields[$k]);
+        if (isset($params[$v])) {
+            $data[$v] = $params[$v];
         }
     }
-    return $fields;
+    return $data;
 }
 
 // }}}
@@ -258,13 +279,10 @@ function parseRevenueParams($params) {
 
 function readCategory() {
     global $PDO;
-    $rows = array();
     $sql = 'SELECT * FROM tbl_categories';
     $res = $PDO->query($sql);
-    while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
-        $rows[] = $row;
-    }
-    return createResponse($rows);
+    $rows= fetch($res);
+    return createResponse($rows, false);
 }
 
 // }}}
@@ -276,9 +294,12 @@ function readMember() {
     $sql = 'SELECT * FROM tbl_members';
     $res = $PDO->query($sql);
     while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+        if (isset($row['date'])) {
+            $row['date'] = date_create($row['date'])->format('Y-m-d');
+        }
         $rows[] = $row;
     }
-    return createResponse($rows);
+    return createResponse($rows, false);
 }
 
 // }}}
@@ -290,9 +311,12 @@ function readCreditcard() {
     $sql = 'SELECT * FROM tbl_creditcards';
     $res = $PDO->query($sql);
     while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+        if (isset($row['date'])) {
+            $row['date'] = date_create($row['date'])->format('Y-m-d');
+        }
         $rows[] = $row;
     }
-    return createResponse($rows);
+    return createResponse($rows, false);
 }
 
 // }}}
@@ -304,9 +328,12 @@ function readPayment() {
     $sql = 'SELECT * FROM tbl_payments';
     $res = $PDO->query($sql);
     while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+        if (isset($row['date'])) {
+            $row['date'] = date_create($row['date'])->format('Y-m-d');
+        }
         $rows[] = $row;
     }
-    return createResponse($rows);
+    return createResponse($rows, false);
 }
 
 // }}}
@@ -318,9 +345,12 @@ function readRevenue() {
     $sql = 'SELECT * FROM tbl_revenues';
     $res = $PDO->query($sql);
     while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+        if (isset($row['date'])) {
+            $row['date'] = date_create($row['date'])->format('Y-m-d');
+        }
         $rows[] = $row;
     }
-    return createResponse($rows);
+    return createResponse($rows, false);
 }
 
 // }}}
@@ -336,7 +366,7 @@ function createCategory($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -352,7 +382,7 @@ function createMember($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -368,7 +398,7 @@ function createCreditcard($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -384,7 +414,7 @@ function createPayment($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -400,7 +430,7 @@ function createRevenue($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -416,7 +446,7 @@ function updateCategory($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -432,7 +462,7 @@ function updateMember($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -448,7 +478,7 @@ function updateCreditcard($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -464,7 +494,7 @@ function updatePayment($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -480,7 +510,7 @@ function updateRevenue($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -496,7 +526,7 @@ function deleteCategory($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -512,7 +542,7 @@ function deleteMember($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -528,7 +558,7 @@ function deleteCreditcard($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -544,7 +574,7 @@ function deletePayment($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -560,7 +590,7 @@ function deleteRevenue($params) {
 
     execute($rst, $data, $error);
 
-    return createResponse([$data], $error);
+    return createResponse(array($data), $error);
 }
 
 // }}}
@@ -575,6 +605,7 @@ if (!parseAPIParams($_GET)) {
 $API_FUNC = $API_METHOD . ucfirst($API_TYPE);
 
 try {
+    header('Content-Type: application/json; charset=utf-8');
     echo $API_FUNC($API_POST);
 } catch(Exception $e) {
     exit;
